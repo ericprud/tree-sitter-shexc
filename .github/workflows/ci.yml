@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  generate-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install tree-sitter CLI
+        run: npm install --no-save tree-sitter-cli@0.26.9
+
+      - name: Generate parser from grammar.js
+        run: npx tree-sitter generate
+
+      - name: Check generated files are up to date
+        run: git diff --exit-code -- src grammar.js
+
+      - name: Run corpus tests
+        run: npx tree-sitter test
+
+  cargo-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: cargo test
