@@ -72,6 +72,22 @@ $(LANGUAGE_NAME).pc: bindings/c/$(LANGUAGE_NAME).pc.in
 		-e 's|@PROJECT_HOMEPAGE_URL@|$(HOMEPAGE_URL)|' \
 		-e 's|@CMAKE_INSTALL_PREFIX@|$(PREFIX)|' $< > $@
 
+# src/parser.c targets ABI 14 (LANGUAGE_VERSION 14), compatible with
+# Emacs 29.1+ and Emacs 30+.  tree-sitter-cli >= 0.23.0 generates ABI 15
+# (Emacs 30+ only), so regeneration must use cli 0.22.6 with Node 18:
+#
+#   cargo install tree-sitter-cli --version 0.22.6
+#   make generate-abi14
+#
+# grammar.js uses ESM (export default), so we temporarily switch it and
+# package.json to CJS for the generate step, then restore them.
+generate-abi14:
+	cp grammar.js grammar.js.bak && cp package.json package.json.bak
+	sed -i 's/^export default grammar(/module.exports = grammar(/' grammar.js
+	sed -i 's/"type": "module"/"type": "commonjs"/' package.json
+	$(TS) generate --no-bindings
+	mv grammar.js.bak grammar.js && mv package.json.bak package.json
+
 $(SRC_DIR)/grammar.json: grammar.js
 	$(TS) generate --no-parser $^
 
