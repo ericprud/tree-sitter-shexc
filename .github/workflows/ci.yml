@@ -5,23 +5,21 @@ on:
   pull_request:
 
 jobs:
-  generate-and-test:
+  # src/parser.c is intentionally pinned to ABI 14 (LANGUAGE_VERSION 14),
+  # compatible with Emacs 29.1+ and Emacs 30+.  Modern tree-sitter-cli
+  # generates ABI 15, so we do not regenerate parser.c in CI — it is
+  # maintained manually via `make generate-abi14` (see the Makefile).
+  test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
 
       - name: Install tree-sitter CLI
-        run: npm install --no-save tree-sitter-cli@0.26.9
-
-      - name: Generate parser from grammar.js
-        run: npx tree-sitter generate
-
-      - name: Check generated files are up to date
-        run: git diff --exit-code -- src grammar.js
+        run: npm install --no-save tree-sitter-cli
 
       - name: Run corpus tests
         run: npx tree-sitter test
@@ -29,5 +27,5 @@ jobs:
   cargo-test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - run: cargo test
